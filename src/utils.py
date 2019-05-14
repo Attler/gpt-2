@@ -6,7 +6,7 @@ def get_score(hyp, ref, verbose=True):
     rouge = Rouge()
     score = rouge.get_scores(hyp, ref)
     if verbose:
-        #metrics for floydhub
+        # metrics for floydhub
         print('{{"metric": "rouge-1_f", "value": {}}}'.format(score[0]['rouge-1']['f']))
         print('{{"metric": "rouge-1_p", "value": {}}}'.format(score[0]['rouge-1']['p']))
         print('{{"metric": "rouge-1_r", "value": {}}}'.format(score[0]['rouge-1']['r']))
