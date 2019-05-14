@@ -2,3 +2,6 @@ __pycache__
 .mypy_cache/
 models/
 venv
+.idea
+.floydexpt
+.floydignore

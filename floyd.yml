@@ -1,0 +1,37 @@
+# see: https://docs.floydhub.com/floyd_config
+# All supported configs:
+#
+#machine: cpu
+#env: tensorflow-1.8
+#input:
+#  - destination: input
+#    source: foo/datasets/yelp-food/1
+#  - foo/datasets/yelp-food-test/1:test
+#description: this is a test
+#max_runtime: 3600
+#command: python train.py
+
+# You can also define multiple tasks to use with --task argument:
+#
+#task:
+#  evaluate:
+#    machine: gpu
+#    command: python evaluate.py
+#
+#  serve:
+#    machine: cpu
+#    mode: serve
+
+machine: gpu
+input:
+  - source: jjatler/datasets/abridged-news/1
+    destination: news
+env: tensorflow-1.12
+command: python download_model.py 345M && python src/headline_generation.py
+
+
+task:
+  setup:
+    machine: cpu
+    command: python download_model.py 345M
+    description: download model 345M
