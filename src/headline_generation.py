@@ -6,6 +6,7 @@ import os
 import numpy as np
 import tensorflow as tf
 import pandas as pd
+from spacy.lang.en import English
 
 import model, sample, encoder, utils
 
@@ -38,7 +39,12 @@ def gen_headlines(
      special setting meaning no restrictions. 40 generally is a good value.
     """
 
+    nlp = English()
+    nlp.add_pipe(nlp.create_pipe('sentencizer'))
+
     df = pd.read_csv(input_dir)
+
+    df = df[:10000]
 
     if batch_size is None:
         batch_size = 1
@@ -69,30 +75,55 @@ def gen_headlines(
         ckpt = tf.train.latest_checkpoint(os.path.join('models', model_name))
         saver.restore(sess, ckpt)
 
+        scores = []
+
+        r1f_l = []
+        r2f_l = []
+        rlf_l = []
+
         for idx, row in df.iterrows():
             raw_text = row['story'] + ' TL;DR:'
             truth = row['headline']
 
-            if idx < 1000 and idx%100 == 0:
+            context_tokens = enc.encode(raw_text)
+
+            out = sess.run(output, feed_dict={
+                context: [context_tokens for _ in range(batch_size)]
+            })[:, len(context_tokens):]
+
+            text = enc.decode(out[0])
+            doc = nlp(text)
+            sentences = [sent.string.strip() for sent in doc.sents]
+            text = sentences[0]
+
+            score = utils.get_score(text, truth, verbose=False)
+            scores.append(score)
+
+            r1f = score[0]['rouge-1']['f']
+            r2f = score[0]['rouge-2']['f']
+            rlf = score[0]['rouge-l']['f']
+
+            r1f_l.append(r1f)
+            r2f_l.append(r2f)
+            rlf_l.append(rlf)
+
+            if(r1f > 0.65):
                 print("=" * 40 + " INPUT " + str(idx) + " " + "=" * 40)
                 print(raw_text)
+                print("=" * 40 + " OUTPUT " + "=" * 40)
+                print(text)
+                print("=" * 40 + " TRUTH " + "=" * 40)
+                print(truth)
+                print('rouge-1 f: {} \t rouge-2 f: {} \t rouge-l f: {}\n'.format(r1f, r2f, rlf))
 
-            context_tokens = enc.encode(raw_text)
-            generated = 0
-            for _ in range(nsamples // batch_size):
-                out = sess.run(output, feed_dict={
-                    context: [context_tokens for _ in range(batch_size)]
-                })[:, len(context_tokens):]
-                for i in range(batch_size):
-                    generated += 1
-                    text = enc.decode(out[i])
-                    if idx < 1000 and idx % 100 == 0:
-                        print("=" * 40 + " OUTPUT " + "=" * 40)
-                        print(text)
-                        print("=" * 40 + " TRUTH " + "=" * 40)
-                        print(truth)
-                    df.loc[idx,'output'] = text
-                    utils.get_score(text, truth)
+            if idx%100 == 0:
+                r1f_m = np.mean(r1f_l)
+                r2f_m = np.mean(r2f_l)
+                rlf_m = np.mean(rlf_l)
+                print('{{"metric": "rouge-1_f", "value": {}, "step": {}}}'.format(r1f_m, idx))
+                print('{{"metric": "rouge-2_f", "value": {}, "step": {}}}'.format(r2f_m, idx))
+                print('{{"metric": "rouge-l_f", "value": {}, "step": {}}}'.format(rlf_m, idx))
+
 
     df.to_csv("output.csv")
 
