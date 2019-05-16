@@ -94,7 +94,8 @@ def gen_headlines(
             text = enc.decode(out[0])
             doc = nlp(text)
             sentences = [sent.string.strip() for sent in doc.sents]
-            text = sentences[0]
+            if len(sentences[0]) > 10:
+                text = sentences[0]
 
             score = utils.get_score(text, truth, verbose=False)
             scores.append(score)
