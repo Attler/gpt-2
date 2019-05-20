@@ -24,7 +24,7 @@
 
 machine: gpu
 input:
-  - source: jjatler/datasets/abridged-news/1
+  - source: jjatler/datasets/abridged-news/2
     destination: news
 env: tensorflow-1.12
 command: python download_model.py 345M && python src/headline_generation.py

@@ -6,7 +6,7 @@ from spacy.lang.en import English
 
 import utils
 
-def baseline(
+def baseline_random(
     input_dir='/floyd/input/news/test.csv',
 
 ):
@@ -30,8 +30,10 @@ def baseline(
 
         doc = nlp(raw_text)
         sentences = [sent.string.strip() for sent in doc.sents]
-        if len(sentences[0]) > 10:
-            text = sentences[0]
+        sentences = [sent for sent in sentences if len(sent) > 10]
+
+        if len(sentences) > 0:
+            text = np.random.choice(sentences)
 
         score = utils.get_score(text, truth, verbose=False)
         scores.append(score)
@@ -60,4 +62,4 @@ def baseline(
     print('{{"metric": "rouge-l_f", "value": {}, "step": {}}}'.format(rlf_m, len(df)))
 
 if __name__ == '__main__':
-    baseline()
+    baseline_random()
