@@ -22,16 +22,18 @@
 #    machine: cpu
 #    mode: serve
 
-machine: gpu
+machine: gpu2
+env: tensorflow-1.13
 input:
-  - source: jjatler/datasets/abridged-news/2
-    destination: news
-env: tensorflow-1.12
-command: python download_model.py 345M && python src/headline_generation.py
+  - destination: news
+    source: jjatler/datasets/abridged-news/4
+command: python download_model.py 345M && python train.py --dataset /floyd/input/news/input-text.txt.npz --save_every=250 --val_every=250 --sample_every=1000 --batch_size=2 --only_train_transformer_layers --learning_rate=0.000002 --model_name 345M
 
 
 task:
-  setup:
-    machine: cpu
-    command: python download_model.py 345M
-    description: download model 345M
+  evaluate:
+    input:
+      - destination: old
+        source: jjatler/projects/headlines/54
+    command: python download_model.py 345M && python src/headline_eval.py --model_name 345M
+    description: evaluate
